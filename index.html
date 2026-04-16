@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BridgeLend</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1D9E75; --green-light: #E1F5EE; --green-dark: #085041; --green-mid: #5DCAA5;
+    --amber: #EF9F27; --amber-light: #FAEEDA; --amber-dark: #412402;
+    --red: #E24B4A; --red-light: #FCEBEB; --red-dark: #501313;
+    --blue: #378ADD; --blue-light: #E6F1FB; --blue-dark: #042C53;
+    --bg: #F7F6F2; --surface: #FFFFFF; --border: rgba(0,0,0,0.09);
+    --text: #1a1a18; --muted: #6B6A66; --subtle: #A5A49F;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  
+  /* TOP NAV */
+  .topnav { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 60px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text); }
+  .logo em { color: var(--green); font-style: normal; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .ntab { padding: 7px 16px; border-radius: 99px; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .ntab.active { background: var(--green); color: #fff; font-weight: 500; }
+  .ntab:hover:not(.active) { background: var(--green-light); color: var(--green-dark); }
+  .nav-user { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--green-dark); }
+
+  /* LAYOUT */
+  .page { display: none; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; }
+  .card + .card { margin-top: 1rem; }
+  .card-title { font-family: 'DM Serif Display', serif; font-size: 18px; margin-bottom: 1.25rem; }
+  .card-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* STAT STRIP */
+  .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-box { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.25rem 1.5rem; }
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-val { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); }
+  .stat-change { font-size: 12px; color: var(--green); margin-top: 4px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--subtle); border-bottom: 1px solid var(--border); }
+  td { padding: 13px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; }
+  .badge.approved { background: var(--green-light); color: var(--green-dark); }
+  .badge.approved::before { background: var(--green); }
+  .badge.pending { background: var(--amber-light); color: var(--amber-dark); }
+  .badge.pending::before { background: var(--amber); }
+  .badge.funded { background: var(--blue-light); color: var(--blue-dark); }
+  .badge.funded::before { background: var(--blue); }
+  .badge.declined { background: var(--red-light); color: var(--red-dark); }
+  .badge.declined::before { background: var(--red); }
+
+  /* BUTTONS */
+  .btn { padding: 9px 20px; border-radius: 99px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--green); color: var(--green); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+  /* FIELDS */
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem; }
+  .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .field input, .field select { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: var(--bg); transition: border-color 0.15s; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--green); background: #fff; }
+
+  /* BANK CONNECT */
+  .bank-connect { border: 2px dashed var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; transition: all 0.2s; cursor: pointer; }
+  .bank-connect:hover { border-color: var(--green); background: var(--green-light); }
+  .bank-icon { font-size: 32px; margin-bottom: 10px; }
+  .bank-title { font-weight: 500; font-size: 15px; margin-bottom: 6px; }
+  .bank-sub { font-size: 13px; color: var(--muted); }
+
+  /* VERIFY STEPS */
+  .verify-flow { display: flex; flex-direction: column; gap: 0; }
+  .vstep { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .vstep:last-child { border-bottom: none; }
+  .vstep-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 2px; transition: all 0.4s; }
+  .vstep-dot.idle { background: #F0EFE9; color: var(--subtle); }
+  .vstep-dot.running { background: var(--amber-light); color: var(--amber-dark); animation: spin 1s linear infinite; }
+  .vstep-dot.done { background: var(--green-light); color: var(--green-dark); }
+  .vstep-dot.fail { background: var(--red-light); color: var(--red-dark); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .vstep-info h4 { font-size: 14px; font-weight: 500; }
+  .vstep-info p { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .vstep-result { font-size: 12px; color: var(--green-dark); margin-top: 4px; font-weight: 500; }
+
+  /* LOAN OFFER CARDS */
+  .offer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .offer-card { border-radius: var(--radius); border: 1.5px solid var(--border); padding: 1.5rem; background: var(--surface); position: relative; transition: all 0.2s; cursor: pointer; }
+  .offer-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .offer-card.best { border-color: var(--green); }
+  .offer-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 12px; border-radius: 99px; white-space: nowrap; }
+  .offer-type { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .offer-rate { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--text); }
+  .offer-rate span { font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--muted); }
+  .offer-details { margin: 1rem 0; font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .offer-details strong { color: var(--text); }
+  .offer-select { width: 100%; margin-top: 0.5rem; }
+
+  /* AI RESPONSE */
+  .ai-response { background: linear-gradient(135deg, #F0FAF6 0%, #EBF5FF 100%); border: 1px solid var(--green-mid); border-radius: var(--radius); padding: 1.5rem; margin-top: 1rem; }
+  .ai-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .ai-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; }
+  .ai-avatar svg { width: 16px; height: 16px; fill: #fff; }
+  .ai-name { font-size: 13px; font-weight: 600; color: var(--green-dark); }
+  .ai-text { font-size: 14px; line-height: 1.75; color: var(--text); }
+  .ai-text p { margin-bottom: 0.75rem; }
+  .ai-text p:last-child { margin-bottom: 0; }
+  .highlight-num { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--green-dark); }
+  .warn-num { font-family: 'DM Serif Display', serif; font-size: 17px; color: #B45309; }
+
+  /* LENDER DETAIL PANEL */
+  .detail-panel { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; }
+  .risk-meter { height: 8px; border-radius: 4px; background: #EEE; margin: 8px 0 4px; overflow: hidden; }
+  .risk-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .score-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .score-row:last-child { border-bottom: none; }
+  .score-row span:first-child { color: var(--muted); }
+  .score-row strong { color: var(--text); }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 500; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 2rem; width: 520px; max-width: 95vw; max-height: 90vh; overflow-y: auto; position: relative; }
+  .modal-close { position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+  .modal-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 0.5rem; }
+
+  /* BANK MODAL */
+  .bank-list { display: flex; flex-direction: column; gap: 8px; margin: 1rem 0; }
+  .bank-option { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; font-size: 14px; }
+  .bank-option:hover { border-color: var(--green); background: var(--green-light); }
+  .bank-option.selected { border-color: var(--green); background: var(--green-light); }
+  .bank-logo { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; }
+
+  /* PROGRESS BAR */
+  .progress-bar { height: 4px; border-radius: 2px; background: #EEE; margin: 0.5rem 0 1.5rem; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--green); transition: width 1s ease; }
+
+  /* TABS within page */
+  .inner-tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+  .itab { padding: 8px 16px; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .itab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
+
+  /* TYPING DOTS */
+  .typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: bounce 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 0.25rem; }
+  .section-sub { font-size: 14px; color: var(--muted); margin-bottom: 1.5rem; }
+
+  /* LENDER SIGNUP */
+  .signup-hero { text-align: center; padding: 3rem 1rem 2rem; max-width: 560px; margin: 0 auto; }
+  .signup-hero h1 { font-family: 'DM Serif Display', serif; font-size: 36px; line-height: 1.2; margin-bottom: 0.75rem; }
+  .signup-hero p { font-size: 15px; color: var(--muted); line-height: 1.6; }
+  .signup-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 2rem 0; }
+  .signup-step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; text-align: center; }
+  .signup-step-num { width: 36px; height: 36px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem; }
+  .signup-step h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .signup-step p { font-size: 13px; color: var(--muted); }
+  .signup-form-wrap { max-width: 680px; margin: 0 auto; }
+  .form-section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--subtle); margin: 1.5rem 0 0.75rem; }
+  .checkbox-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .checkbox-row:last-child { border-bottom: none; }
+  .checkbox-row input[type=checkbox] { margin-top: 2px; accent-color: var(--green); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+  .checkbox-row label { color: var(--text); cursor: pointer; line-height: 1.5; }
+  .checkbox-row label span { font-size: 12px; color: var(--muted); display: block; margin-top: 2px; }
+  .risk-selector { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 6px; }
+  .risk-opt { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .risk-opt:hover { border-color: var(--green); background: var(--green-light); }
+  .risk-opt.selected { border-color: var(--green); background: var(--green-light); }
+  .risk-opt-icon { font-size: 22px; margin-bottom: 6px; }
+  .risk-opt-label { font-size: 13px; font-weight: 600; }
+  .risk-opt-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .signup-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; }
+  .sp-step { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--subtle); }
+  .sp-step.active { color: var(--green-dark); font-weight: 600; }
+  .sp-step.done { color: var(--green); }
+  .sp-dot { width: 8px; height: 8px; border-radius: 50%; background: #DDD; }
+  .sp-step.active .sp-dot { background: var(--green); }
+  .sp-step.done .sp-dot { background: var(--green); }
+  .sp-line { flex: 1; height: 1px; background: #DDD; }
+  .success-banner { background: linear-gradient(135deg, var(--green-light), #D4F0E8); border: 1px solid var(--green-mid); border-radius: var(--radius); padding: 2rem; text-align: center; display: none; }
+  .success-banner h2 { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--green-dark); margin-bottom: 0.5rem; }
+  .success-banner p { font-size: 14px; color: var(--muted); }
+
+  /* PERSONAL BANK PAGE */
+  .pbank-header { margin-bottom: 1.5rem; }
+  .pbank-connected { background: linear-gradient(135deg, var(--green-light), #D4F0E8); border: 1.5px solid var(--green-mid); border-radius: var(--radius); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+  .pbank-connected-info { display: flex; align-items: center; gap: 12px; }
+  .pbank-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0; }
+  .pbank-name { font-weight: 600; font-size: 15px; }
+  .pbank-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .add-bank-tile { border: 2px dashed var(--border); border-radius: var(--radius); padding: 1.5rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.2s; }
+  .add-bank-tile:hover { border-color: var(--green); background: var(--green-light); }
+  .add-bank-tile-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--bg); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .add-bank-tile-text strong { font-size: 14px; display: block; margin-bottom: 3px; }
+  .add-bank-tile-text span { font-size: 13px; color: var(--muted); }
+  .pbank-loan-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .pbank-loan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; }
+  .rate-pill { background: var(--green-light); color: var(--green-dark); padding: 4px 12px; border-radius: 99px; font-size: 13px; font-weight: 600; }
+  .slider-wrap { margin: 1.25rem 0; }
+  .slider-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .slider-val { font-weight: 600; color: var(--text); font-size: 14px; }
+  input[type=range] { width: 100%; accent-color: var(--green); cursor: pointer; }
+  .loan-calc-result { background: var(--bg); border-radius: var(--radius-sm); padding: 1rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-top: 1rem; }
+  .lcr-item { text-align: center; }
+  .lcr-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .lcr-val { font-family: 'DM Serif Display', serif; font-size: 22px; }
+
+  @media (max-width: 768px) {
+    .stat-strip { grid-template-columns: 1fr 1fr; }
+    .offer-grid { grid-template-columns: 1fr; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .signup-steps { grid-template-columns: 1fr; }
+    .risk-selector { grid-template-columns: 1fr; }
+    .loan-calc-result { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="logo">bridge<em>lend</em></div>
+  <div class="nav-tabs">
+    <button class="ntab active" onclick="showPage('borrower')">Borrower</button>
+    <button class="ntab" onclick="showPage('lender')">Lender</button>
+    <button class="ntab" onclick="showPage('lender-signup')">Become a Lender</button>
+    <button class="ntab" onclick="showPage('my-bank')">My Bank</button>
+  </div>
+  <div class="nav-user">
+    <div class="avatar">AC</div>
+    <span>Arnav C.</span>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- BORROWER PAGE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page active" id="page-borrower">
+
+  <!-- STEP 1: Connect Bank -->
+  <div id="step-connect">
+    <div class="section-title">Find loans you qualify for</div>
+    <div class="section-sub">Connect your bank to let us verify your financial profile — no credit score impact.</div>
+
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="bank-connect" onclick="openBankModal()">
+        <div class="bank-icon">🏦</div>
+        <div class="bank-title">Connect your bank</div>
+        <div class="bank-sub">Securely link via bank-grade 256-bit encryption</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card" style="padding:1rem;flex:1;">
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">What we check</div>
+          <div style="font-size:13px;line-height:2;color:var(--text);">
+            ✓ &nbsp;Identity & account ownership<br>
+            ✓ &nbsp;Income & deposit history<br>
+            ✓ &nbsp;Existing debt & recurring payments<br>
+            ✓ &nbsp;Average monthly balance<br>
+            ✓ &nbsp;Credit utilization signals
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center;padding:1.5rem;background:#FAFAF8;border-style:dashed;">
+      <div style="font-size:13px;color:var(--muted);">🔒 &nbsp;Bank-level encryption &nbsp;·&nbsp; Read-only access &nbsp;·&nbsp; Never stored &nbsp;·&nbsp; FDIC partner verified</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Verification in progress -->
+  <div id="step-verify" style="display:none;">
+    <div class="section-title">Verifying your profile</div>
+    <div class="section-sub">Our AI is securely pulling and analyzing your bank data. This takes about 15 seconds.</div>
+
+    <div class="card">
+      <div class="progress-bar"><div class="progress-fill" id="verify-progress" style="width:0%"></div></div>
+      <div class="verify-flow" id="verify-steps">
+        <div class="vstep">
+          <div class="vstep-dot idle" id="vd1">1</div>
+          <div class="vstep-info">
+            <h4>Identity verification</h4>
+            <p>Confirming account holder matches application</p>
+            <div class="vstep-result" id="vr1" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="vstep">
+          <div class="vstep-dot idle" id="vd2">2</div>
+          <div class="vstep-info">
+            <h4>Income analysis</h4>
+            <p>Analyzing 12 months of deposit history</p>
+            <div class="vstep-result" id="vr2" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="vstep">
+          <div class="vstep-dot idle" id="vd3">3</div>
+          <div class="vstep-info">
+            <h4>Debt & liability scan</h4>
+            <p>Identifying recurring debt payments and obligations</p>
+            <div class="vstep-result" id="vr3" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="vstep">
+          <div class="vstep-dot idle" id="vd4">4</div>
+          <div class="vstep-info">
+            <h4>Credit behavior signals</h4>
+            <p>Analyzing balance trends and payment patterns</p>
+            <div class="vstep-result" id="vr4" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="vstep">
+          <div class="vstep-dot idle" id="vd5">5</div>
+          <div class="vstep-info">
+            <h4>Risk scoring & lender match</h4>
+            <p>Calculating your personalized rate and matching lenders</p>
+            <div class="vstep-result" id="vr5" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Loan Offers -->
+  <div id="step-offers" style="display:none;">
+    <div class="section-title">Your personalized loan offers</div>
+    <div class="section-sub" id="offers-sub">Based on your verified profile — no impact to your credit score.</div>
+
+    <!-- Verified profile strip -->
+    <div class="card" style="margin-bottom:1rem;background:var(--green-light);border-color:var(--green-mid);">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="font-size:12px;font-weight:600;color:var(--green-dark);text-transform:uppercase;letter-spacing:.06em;">✓ Verified Profile</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--green-dark);">
+          <span id="prof-name">—</span>
+          <span>·</span>
+          <span id="prof-income">—</span>
+          <span>·</span>
+          <span id="prof-score">—</span>
+          <span>·</span>
+          <span id="prof-dti">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="offer-grid" id="offer-grid"></div>
+
+    <!-- Request form -->
+    <div class="card" id="request-form" style="display:none;margin-top:1rem;">
+      <div class="card-title">Request this loan</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Loan amount</label>
+          <input type="number" id="req-amount" placeholder="e.g. 15000" />
+        </div>
+        <div class="field">
+          <label>Loan purpose</label>
+          <select id="req-purpose">
+            <option>Home renovation</option>
+            <option>Debt consolidation</option>
+            <option>Medical expenses</option>
+            <option>Education</option>
+            <option>Business</option>
+            <option>Vehicle</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Repayment term</label>
+          <select id="req-term">
+            <option value="12">12 months</option>
+            <option value="24">24 months</option>
+            <option value="36" selected>36 months</option>
+            <option value="48">48 months</option>
+            <option value="60">60 months</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Selected rate</label>
+          <input type="text" id="req-rate" readonly style="background:#F0FAF6;color:var(--green-dark);font-weight:600;" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="get-loan-btn" onclick="getLoan()">Get my loan &amp; full breakdown</button>
+    </div>
+
+    <!-- AI Response -->
+    <div id="ai-loan-response" style="display:none;margin-top:1rem;">
+      <div class="ai-response">
+        <div class="ai-header">
+          <div class="ai-avatar">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          </div>
+          <div>
+            <div class="ai-name">BridgeLend AI Agent</div>
+            <div style="font-size:11px;color:var(--muted);">Personalized loan analysis</div>
+          </div>
+        </div>
+        <div class="ai-text" id="ai-text-content">
+          <div class="typing"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Repayment breakdown -->
+      <div class="card" style="margin-top:1rem;" id="repay-breakdown">
+        <div class="card-title">Repayment breakdown</div>
+        <div class="grid-3" id="repay-stats"></div>
+        <div style="margin-top:1rem;background:var(--bg);border-radius:var(--radius-sm);padding:1rem;" id="repay-schedule-preview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- LENDER PAGE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page" id="page-lender">
+  <div class="stat-strip">
+    <div class="stat-box">
+      <div class="stat-label">Total deployed</div>
+      <div class="stat-val">$84,200</div>
+      <div class="stat-change">↑ $12,000 this month</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Avg return</div>
+      <div class="stat-val">8.3%</div>
+      <div class="stat-change">↑ 0.4% vs last quarter</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Active loans</div>
+      <div class="stat-val">14</div>
+      <div class="stat-change">3 new this week</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Default rate</div>
+      <div class="stat-val">0.8%</div>
+      <div class="stat-change" style="color:var(--green);">Well below 2% threshold</div>
+    </div>
+  </div>
+
+  <div class="inner-tabs">
+    <button class="itab active" onclick="lenderTab('opportunities')">Opportunities</button>
+    <button class="itab" onclick="lenderTab('portfolio')">My Portfolio</button>
+    <button class="itab" onclick="lenderTab('analytics')">Analytics</button>
+  </div>
+
+  <!-- OPPORTUNITIES -->
+  <div id="ltab-opportunities">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <div><div class="card-title" style="margin:0;">Verified loan requests</div><div class="card-sub">All borrowers bank-verified by our AI agent</div></div>
+        <div style="display:flex;gap:8px;">
+          <select style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;background:var(--bg);color:var(--text);">
+            <option>All types</option>
+            <option>Personal</option>
+            <option>Business</option>
+            <option>Student</option>
+          </select>
+          <select style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;background:var(--bg);color:var(--text);">
+            <option>All risk levels</option>
+            <option>Low risk</option>
+            <option>Medium risk</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Borrower</th>
+              <th>Loan type</th>
+              <th>Amount</th>
+              <th>Rate</th>
+              <th>Term</th>
+              <th>Credit</th>
+              <th>DTI</th>
+              <th>Risk</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="lender-loan-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div id="ltab-portfolio" style="display:none;">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Active loans</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Borrower</th><th>Balance</th><th>Rate</th><th>Next payment</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Sarah M.</td><td>$11,240</td><td>8.5%</td><td>Apr 5</td><td><span class="badge approved">On track</span></td></tr>
+              <tr><td>James T.</td><td>$23,880</td><td>10.2%</td><td>Apr 8</td><td><span class="badge approved">On track</span></td></tr>
+              <tr><td>Priya K.</td><td>$7,920</td><td>6.9%</td><td>Apr 3</td><td><span class="badge approved">On track</span></td></tr>
+              <tr><td>Marcus L.</td><td>$18,500</td><td>9.1%</td><td>Apr 12</td><td><span class="badge pending">Late 3d</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Earnings summary</div>
+        <div class="score-row"><span>Principal deployed</span><strong>$84,200</strong></div>
+        <div class="score-row"><span>Interest earned YTD</span><strong style="color:var(--green);">$3,842</strong></div>
+        <div class="score-row"><span>Projected annual return</span><strong style="color:var(--green);">$6,989</strong></div>
+        <div class="score-row"><span>Loans paid off</span><strong>8</strong></div>
+        <div class="score-row"><span>Defaults (lifetime)</span><strong style="color:var(--red);">1 ($1,200)</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="ltab-analytics" style="display:none;">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Risk distribution</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Low risk (credit 720+)</span><span style="color:var(--green);">58%</span></div>
+            <div class="risk-meter"><div class="risk-fill" style="width:58%;background:var(--green);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Medium risk (credit 650–719)</span><span style="color:var(--amber);">34%</span></div>
+            <div class="risk-meter"><div class="risk-fill" style="width:34%;background:var(--amber);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Higher risk (credit 580–649)</span><span style="color:var(--red);">8%</span></div>
+            <div class="risk-meter"><div class="risk-fill" style="width:8%;background:var(--red);"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Loan type breakdown</div>
+        <div class="score-row"><span>Personal loans</span><strong>42%</strong></div>
+        <div class="score-row"><span>Business loans</span><strong>31%</strong></div>
+        <div class="score-row"><span>Student loans</span><strong>18%</strong></div>
+        <div class="score-row"><span>Real estate</span><strong>9%</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- LENDER SIGNUP PAGE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page" id="page-lender-signup">
+
+  <!-- Progress indicator -->
+  <div class="signup-form-wrap">
+    <div class="signup-progress" id="signup-progress-bar">
+      <div class="sp-step active" id="sp1"><div class="sp-dot"></div> About you</div>
+      <div class="sp-line"></div>
+      <div class="sp-step" id="sp2"><div class="sp-dot"></div> Lending preferences</div>
+      <div class="sp-line"></div>
+      <div class="sp-step" id="sp3"><div class="sp-dot"></div> Fund your account</div>
+      <div class="sp-line"></div>
+      <div class="sp-step" id="sp4"><div class="sp-dot"></div> Done</div>
+    </div>
+
+    <!-- STEP 1: About You -->
+    <div id="ls-step-1">
+      <div class="signup-hero" style="text-align:left;padding:0 0 1.5rem;">
+        <h1>Start earning as a lender</h1>
+        <p>Join thousands of everyday investors earning 6–12% returns by funding verified personal and business loans.</p>
+      </div>
+
+      <div class="signup-steps">
+        <div class="signup-step">
+          <div class="signup-step-num">1</div>
+          <h4>Verify your identity</h4>
+          <p>Quick KYC check — takes under 2 minutes</p>
+        </div>
+        <div class="signup-step">
+          <div class="signup-step-num">2</div>
+          <h4>Set your preferences</h4>
+          <p>Choose risk tolerance and loan types</p>
+        </div>
+        <div class="signup-step">
+          <div class="signup-step-num">3</div>
+          <h4>Fund & start earning</h4>
+          <p>Deposit and begin funding borrowers today</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Personal details</div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="ls-fname">First name</label>
+            <input type="text" id="ls-fname" placeholder="Jane" />
+          </div>
+          <div class="field">
+            <label for="ls-lname">Last name</label>
+            <input type="text" id="ls-lname" placeholder="Smith" />
+          </div>
+          <div class="field">
+            <label for="ls-email">Email address</label>
+            <input type="email" id="ls-email" placeholder="jane@example.com" />
+          </div>
+          <div class="field">
+            <label for="ls-phone">Phone number</label>
+            <input type="tel" id="ls-phone" placeholder="+1 (555) 000-0000" />
+          </div>
+          <div class="field">
+            <label for="ls-dob">Date of birth</label>
+            <input type="date" id="ls-dob" />
+          </div>
+          <div class="field">
+            <label for="ls-ssn">SSN (last 4 digits)</label>
+            <input type="text" id="ls-ssn" placeholder="••••" maxlength="4" />
+          </div>
+        </div>
+
+        <div class="form-section-label">Residential address</div>
+        <div class="grid-2">
+          <div class="field" style="grid-column:1/-1;">
+            <label for="ls-addr">Street address</label>
+            <input type="text" id="ls-addr" placeholder="123 Main St" />
+          </div>
+          <div class="field">
+            <label for="ls-city">City</label>
+            <input type="text" id="ls-city" placeholder="San Francisco" />
+          </div>
+          <div class="field">
+            <label for="ls-state">State</label>
+            <select id="ls-state">
+              <option value="">Select state…</option>
+              <option>CA</option><option>TX</option><option>NY</option><option>FL</option>
+              <option>WA</option><option>IL</option><option>PA</option><option>OH</option>
+              <option>GA</option><option>NC</option><option>MI</option><option>NJ</option>
+              <option>VA</option><option>AZ</option><option>CO</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ls-zip">ZIP code</label>
+            <input type="text" id="ls-zip" placeholder="94105" maxlength="10" />
+          </div>
+        </div>
+
+        <div class="form-section-label">Investor accreditation</div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ls-acc1">
+          <label for="ls-acc1">
+            I am an accredited investor
+            <span>Annual income exceeding $200K, or net worth over $1M excluding primary residence</span>
+          </label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ls-acc2">
+          <label for="ls-acc2">
+            I understand peer-to-peer lending involves risk of capital loss
+            <span>Returns are not guaranteed and borrowers may default</span>
+          </label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ls-acc3">
+          <label for="ls-acc3">
+            I agree to the BridgeLend Lender Agreement and Terms of Service
+          </label>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;justify-content:flex-end;">
+          <button class="btn btn-primary" onclick="lsNextStep(1)">Continue to preferences →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Lending Preferences -->
+    <div id="ls-step-2" style="display:none;">
+      <div class="card">
+        <div class="card-title">Lending preferences</div>
+        <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem;">Tell us what kinds of loans you want to fund. You can always change these later.</p>
+
+        <div class="form-section-label">Risk tolerance</div>
+        <div class="risk-selector">
+          <div class="risk-opt" id="risk-conservative" onclick="selectRisk('conservative')">
+            <div class="risk-opt-icon">🛡️</div>
+            <div class="risk-opt-label">Conservative</div>
+            <div class="risk-opt-sub">Credit 720+ · 6–8% returns · Lowest default risk</div>
+          </div>
+          <div class="risk-opt selected" id="risk-balanced" onclick="selectRisk('balanced')">
+            <div class="risk-opt-icon">⚖️</div>
+            <div class="risk-opt-label">Balanced</div>
+            <div class="risk-opt-sub">Credit 650+ · 8–10% returns · Moderate risk</div>
+          </div>
+          <div class="risk-opt" id="risk-growth" onclick="selectRisk('growth')">
+            <div class="risk-opt-icon">📈</div>
+            <div class="risk-opt-label">Growth</div>
+            <div class="risk-opt-sub">Credit 580+ · 10–13% returns · Higher risk</div>
+          </div>
+        </div>
+
+        <div class="form-section-label" style="margin-top:1.5rem;">Loan types to fund</div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="lt-personal" checked>
+          <label for="lt-personal">Personal loans <span>Home renovation, medical, major purchases</span></label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="lt-business" checked>
+          <label for="lt-business">Business loans <span>Inventory, equipment, expansion capital</span></label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="lt-student">
+          <label for="lt-student">Student loans <span>Tuition and education costs</span></label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="lt-realestate">
+          <label for="lt-realestate">Real estate <span>Down payment support and property improvements</span></label>
+        </div>
+
+        <div class="form-section-label" style="margin-top:1.5rem;">Monthly investment budget</div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="ls-budget">I plan to invest per month</label>
+            <select id="ls-budget">
+              <option>$100 – $500</option>
+              <option>$500 – $1,000</option>
+              <option selected>$1,000 – $5,000</option>
+              <option>$5,000 – $25,000</option>
+              <option>$25,000+</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ls-autodeploy">Auto-deploy funds</label>
+            <select id="ls-autodeploy">
+              <option>Yes — auto-match me with qualifying borrowers</option>
+              <option>No — I'll manually select each loan</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;justify-content:space-between;">
+          <button class="btn btn-outline" onclick="lsGoStep(1)">← Back</button>
+          <button class="btn btn-primary" onclick="lsNextStep(2)">Continue to funding →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Fund Account -->
+    <div id="ls-step-3" style="display:none;">
+      <div class="card">
+        <div class="card-title">Fund your lender account</div>
+        <p style="font-size:14px;color:var(--muted);margin-bottom:1.5rem;">Connect a bank account to deposit your initial investment. You can withdraw any uninvested balance at any time.</p>
+
+        <div class="form-section-label">Link your funding bank</div>
+        <div id="ls-bank-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+          <div class="bank-option" onclick="selectLenderBank(this,'Chase')" data-bank="Chase">
+            <div class="bank-logo" style="background:#117ACA;">JPM</div>
+            <div><strong>Chase</strong><div style="font-size:12px;color:var(--muted);">JPMorgan Chase Bank</div></div>
+          </div>
+          <div class="bank-option" onclick="selectLenderBank(this,'Bank of America')" data-bank="Bank of America">
+            <div class="bank-logo" style="background:#E31837;">BoA</div>
+            <div><strong>Bank of America</strong><div style="font-size:12px;color:var(--muted);">BofA Consumer Banking</div></div>
+          </div>
+          <div class="bank-option" onclick="selectLenderBank(this,'Wells Fargo')" data-bank="Wells Fargo">
+            <div class="bank-logo" style="background:#CC0000;">WF</div>
+            <div><strong>Wells Fargo</strong></div>
+          </div>
+          <div class="bank-option" onclick="selectLenderBank(this,'Citi')" data-bank="Citi">
+            <div class="bank-logo" style="background:#003B70;">Citi</div>
+            <div><strong>Citi</strong></div>
+          </div>
+          <div class="bank-option" onclick="selectLenderBank(this,'Other')" data-bank="Other">
+            <div class="bank-logo" style="background:#6B6A66;">+</div>
+            <div><strong>Other bank</strong><div style="font-size:12px;color:var(--muted);">Enter routing & account number</div></div>
+          </div>
+        </div>
+
+        <!-- OAuth-style connect panel, same pattern as borrower flow -->
+        <div id="ls-bank-oauth" style="display:none;background:var(--bg);border-radius:var(--radius-sm);padding:1.25rem;border:1.5px solid var(--border);text-align:center;margin-bottom:1rem;">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:0.75rem;">
+            You'll be redirected to your bank to authorise a one-time ACH link.<br>
+            BridgeLend never stores your login credentials.
+          </div>
+          <div style="font-size:12px;color:var(--subtle);margin-bottom:1rem;">🔒 OAuth 2.0 · ACH debit only · Revocable at any time</div>
+          <div id="ls-oauth-return" style="display:none;background:var(--green-light);border-radius:var(--radius-sm);padding:0.75rem;font-size:13px;color:var(--green-dark);margin-bottom:1rem;">↩ Bank connected successfully ✓</div>
+          <button class="btn btn-outline btn-sm" id="ls-oauth-btn" onclick="simulateLenderBankConnect()">Connect via bank login →</button>
+        </div>
+
+        <div id="ls-deposit-section" style="display:none;">
+          <div class="form-section-label">Initial deposit amount</div>
+          <div class="field" style="max-width:280px;">
+            <label for="ls-deposit">Amount to deposit (min. $100)</label>
+            <input type="number" id="ls-deposit" placeholder="e.g. 2500" min="100" />
+          </div>
+          <div style="background:var(--green-light);border-radius:var(--radius-sm);padding:1rem;font-size:13px;color:var(--green-dark);margin-bottom:1rem;">
+            💡 Deposits are held in an FDIC-insured escrow account and only deployed when you fund a loan.
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;justify-content:space-between;">
+          <button class="btn btn-outline" onclick="lsGoStep(2)">← Back</button>
+          <button class="btn btn-primary" id="ls-finish-btn" onclick="lsFinish()">Create my lender account →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Success -->
+    <div id="ls-step-4" style="display:none;">
+      <div class="success-banner" id="ls-success" style="display:block;">
+        <div style="font-size:48px;margin-bottom:1rem;">🎉</div>
+        <h2>Welcome to BridgeLend, <span id="ls-success-name">Lender</span>!</h2>
+        <p style="margin-top:0.5rem;">Your account is live. Start browsing verified loan requests and put your capital to work.</p>
+        <div style="margin-top:1.5rem;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="showPage('lender')">Browse loan opportunities →</button>
+          <button class="btn btn-outline" onclick="showPage('my-bank')">Manage my bank accounts</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- MY BANK PAGE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="page" id="page-my-bank">
+  <div class="pbank-header">
+    <div class="section-title">My Bank Accounts</div>
+    <div class="section-sub">Manage the accounts you use to borrow and lend on BridgeLend.</div>
+  </div>
+
+  <!-- Connected accounts -->
+  <div style="margin-bottom:2rem;">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--subtle);margin-bottom:0.75rem;">Connected accounts</div>
+
+    <div id="connected-banks-list">
+      <!-- Pre-seeded demo account -->
+      <div class="pbank-connected" id="demo-bank-entry">
+        <div class="pbank-connected-info">
+          <div class="pbank-icon" style="background:#117ACA;">JPM</div>
+          <div>
+            <div class="pbank-name">Chase Checking ···4821</div>
+            <div class="pbank-meta">Connected Apr 2025 · Read-only · Used for borrower verification</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="badge approved">Active</span>
+          <button class="btn btn-sm btn-outline" onclick="removeDemoBank()" style="color:var(--red);border-color:rgba(226,75,74,0.3);">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add new account tile -->
+    <div class="add-bank-tile" onclick="openAddBankModal()" style="margin-top:0.75rem;">
+      <div class="add-bank-tile-icon">+</div>
+      <div class="add-bank-tile-text">
+        <strong>Add another bank account</strong>
+        <span>Link a checking or savings account via secure OAuth</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal loan calculator tied to your bank -->
+  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--subtle);margin-bottom:0.75rem;">Estimate a loan from your account</div>
+  <div class="grid-2">
+    <div class="pbank-loan-card">
+      <div class="pbank-loan-header">
+        <div>
+          <div class="card-title" style="margin-bottom:4px;">Loan calculator</div>
+          <div style="font-size:13px;color:var(--muted);">Based on your verified profile</div>
+        </div>
+        <div class="rate-pill" id="pb-rate-pill">7.9% APR</div>
+      </div>
+
+      <div class="slider-wrap">
+        <div class="slider-label">
+          <span>Loan amount</span>
+          <span class="slider-val" id="pb-amount-val">$10,000</span>
+        </div>
+        <input type="range" id="pb-amount" min="500" max="50000" step="500" value="10000" oninput="updateLoanCalc()">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--subtle);margin-top:4px;"><span>$500</span><span>$50,000</span></div>
+      </div>
+
+      <div class="slider-wrap">
+        <div class="slider-label">
+          <span>Repayment term</span>
+          <span class="slider-val" id="pb-term-val">36 months</span>
+        </div>
+        <input type="range" id="pb-term" min="6" max="60" step="6" value="36" oninput="updateLoanCalc()">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--subtle);margin-top:4px;"><span>6 mo</span><span>60 mo</span></div>
+      </div>
+
+      <div class="field" style="margin-bottom:0.5rem;">
+        <label for="pb-purpose">Loan purpose</label>
+        <select id="pb-purpose" onchange="updateLoanCalc()">
+          <option>Home renovation</option>
+          <option>Debt consolidation</option>
+          <option>Medical expenses</option>
+          <option>Education</option>
+          <option>Business</option>
+          <option>Vehicle</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="loan-calc-result" id="pb-calc-result">
+        <div class="lcr-item">
+          <div class="lcr-label">Monthly</div>
+          <div class="lcr-val" id="pb-monthly">$313</div>
+        </div>
+        <div class="lcr-item">
+          <div class="lcr-label">Total interest</div>
+          <div class="lcr-val" id="pb-interest" style="color:var(--amber-dark);">$1,272</div>
+        </div>
+        <div class="lcr-item">
+          <div class="lcr-label">Total repay</div>
+          <div class="lcr-val" id="pb-total">$11,272</div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;margin-top:1.25rem;" onclick="applyFromBank()">Apply for this loan →</button>
+    </div>
+
+    <!-- Account summary -->
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title">Account snapshot</div>
+        <div class="score-row"><span>Verified income</span><strong>$72,000 / yr</strong></div>
+        <div class="score-row"><span>Credit score</span><strong style="color:var(--green);">710 — Good</strong></div>
+        <div class="score-row"><span>Debt-to-income ratio</span><strong>28%</strong></div>
+        <div class="score-row"><span>Avg monthly balance</span><strong>$8,400</strong></div>
+        <div class="score-row"><span>Pre-qualification</span><strong style="color:var(--green);">✓ Up to $20,000</strong></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Active loans</div>
+        <div id="pb-active-loans">
+          <div style="text-align:center;padding:1.5rem;color:var(--subtle);font-size:14px;">No active loans yet.<br>Apply above to get started.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD BANK MODAL (My Bank page) -->
+<div class="modal-bg" id="add-bank-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAddBankModal()">×</button>
+    <div class="modal-title">Add a bank account</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Select your bank. You'll be redirected to authenticate on your bank's own secure page.</p>
+    <div class="bank-list" id="add-bank-list">
+      <div class="bank-option" onclick="selectAddBank(this,'Chase','JPM','#117ACA')">
+        <div class="bank-logo" style="background:#117ACA;">JPM</div>
+        <div><strong>Chase</strong><div style="font-size:12px;color:var(--muted);">JPMorgan Chase Bank</div></div>
+      </div>
+      <div class="bank-option" onclick="selectAddBank(this,'Bank of America','BoA','#E31837')">
+        <div class="bank-logo" style="background:#E31837;">BoA</div>
+        <div><strong>Bank of America</strong></div>
+      </div>
+      <div class="bank-option" onclick="selectAddBank(this,'Wells Fargo','WF','#CC0000')">
+        <div class="bank-logo" style="background:#CC0000;">WF</div>
+        <div><strong>Wells Fargo</strong></div>
+      </div>
+      <div class="bank-option" onclick="selectAddBank(this,'Citi','Citi','#003B70')">
+        <div class="bank-logo" style="background:#003B70;">Citi</div>
+        <div><strong>Citi</strong></div>
+      </div>
+      <div class="bank-option" onclick="selectAddBank(this,'Capital One','C1','#D03027')">
+        <div class="bank-logo" style="background:#D03027;">C1</div>
+        <div><strong>Capital One</strong></div>
+      </div>
+      <div class="bank-option" onclick="selectAddBank(this,'Ally Bank','Ally','#7B3FA0')">
+        <div class="bank-logo" style="background:#7B3FA0;">Ally</div>
+        <div><strong>Ally Bank</strong></div>
+      </div>
+    </div>
+    <div id="add-bank-oauth-panel" style="display:none;margin-top:1rem;">
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1.25rem;border:1.5px solid var(--border);text-align:center;margin-bottom:1rem;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:0.75rem;">
+          You'll be securely redirected to <strong id="add-bank-name-label">your bank</strong>.<br>
+          BridgeLend never sees your username or password.
+        </div>
+        <div style="font-size:12px;color:var(--subtle);margin-bottom:1rem;">🔒 OAuth 2.0 · Read-only access · Auto-expires in 15 min</div>
+        <div id="add-bank-return" style="display:none;background:var(--green-light);border-radius:var(--radius-sm);padding:0.75rem;font-size:13px;color:var(--green-dark);margin-bottom:0.5rem;">↩ Account linked successfully ✓</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" id="add-bank-connect-btn" onclick="confirmAddBank()">Continue to bank login →</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-bg" id="bank-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeBankModal()">×</button>
+    <div class="modal-title">Connect your bank</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Select your bank to securely connect via read-only access. We never store your credentials.</p>
+    <div class="bank-list">
+      <div class="bank-option" onclick="selectBank(this,'Chase')" data-bank="Chase">
+        <div class="bank-logo" style="background:#117ACA;">JPM</div>
+        <div><strong>Chase</strong><div style="font-size:12px;color:var(--muted);">JPMorgan Chase Bank</div></div>
+      </div>
+      <div class="bank-option" onclick="selectBank(this,'Bank of America')" data-bank="Bank of America">
+        <div class="bank-logo" style="background:#E31837;">BoA</div>
+        <div><strong>Bank of America</strong><div style="font-size:12px;color:var(--muted);">BofA Consumer Banking</div></div>
+      </div>
+      <div class="bank-option" onclick="selectBank(this,'Wells Fargo')" data-bank="Wells Fargo">
+        <div class="bank-logo" style="background:#CC0000;">WF</div>
+        <div><strong>Wells Fargo</strong><div style="font-size:12px;color:var(--muted);">Wells Fargo Bank, N.A.</div></div>
+      </div>
+      <div class="bank-option" onclick="selectBank(this,'Citi')" data-bank="Citi">
+        <div class="bank-logo" style="background:#003B70;">Citi</div>
+        <div><strong>Citi</strong><div style="font-size:12px;color:var(--muted);">Citibank Online</div></div>
+      </div>
+      <div class="bank-option" onclick="selectBank(this,'Capital One')" data-bank="Capital One">
+        <div class="bank-logo" style="background:#D03027;">C1</div>
+        <div><strong>Capital One</strong><div style="font-size:12px;color:var(--muted);">Capital One Financial</div></div>
+      </div>
+    </div>
+    <div id="bank-creds" style="display:none;margin-top:1rem;">
+      <!-- SECURITY NOTE: Never collect real banking credentials in your own UI.
+           In production, use an OAuth-delegated service like Plaid, MX, or Finicity.
+           The user authenticates on the bank's own domain; you receive a short-lived
+           access token — you never see or store their username or password.
+           Below is a UI simulation of that redirect-based flow. -->
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1.25rem;border:1.5px solid var(--border);text-align:center;margin-bottom:1rem;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:0.75rem;">
+          You'll be securely redirected to your bank's login page.<br>
+          BridgeLend never sees your username or password.
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--subtle);margin-bottom:1rem;">
+          <span>🔒 OAuth 2.0 · Read-only token · Auto-expires in 15 min</span>
+        </div>
+        <div id="oauth-redirect-state" style="display:none;background:var(--green-light);border-radius:var(--radius-sm);padding:0.75rem;font-size:13px;color:var(--green-dark);margin-bottom:1rem;">
+          ↩ Returning from bank login… verifying token…
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" id="oauth-btn" onclick="simulateOAuthRedirect()">
+        Continue to bank login →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LENDER DETAIL MODAL -->
+<div class="modal-bg" id="lender-detail-modal">
+  <div class="modal" style="width:600px;">
+    <button class="modal-close" onclick="document.getElementById('lender-detail-modal').classList.remove('open')">×</button>
+    <div class="modal-title" id="ld-title">Borrower Profile</div>
+    <div id="ld-body"></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+// NOTE: Never call the Anthropic API directly from the client.
+// The API key must live server-side. Replace BACKEND_PROXY_URL with your
+// actual backend endpoint (e.g. Express /api/ai-loan, Next.js route handler,
+// Cloudflare Worker, etc.) that forwards the request with the key attached.
+const BACKEND_PROXY_URL = '/api/ai-loan'; // ← set this to your backend route
+let selectedOffer = null;
+let verifiedProfile = null;
+
+const LOANS = [
+  { id:1, name:'Sarah M.', type:'Personal', amount:12000, rate:8.5, term:36, credit:742, dti:22, risk:'Low', status:'approved', purpose:'Home renovation', income:78000 },
+  { id:2, name:'James T.', type:'Business', amount:25000, rate:10.2, term:60, credit:698, dti:31, risk:'Medium', status:'approved', purpose:'Inventory expansion', income:95000 },
+  { id:3, name:'Priya K.', type:'Student', amount:8500, rate:6.9, term:48, credit:661, dti:18, risk:'Medium', status:'approved', purpose:'Tuition', income:42000 },
+  { id:4, name:'David L.', type:'Personal', amount:5000, rate:7.5, term:24, credit:780, dti:14, risk:'Low', status:'funded', purpose:'Medical expenses', income:88000 },
+  { id:5, name:'Maria S.', type:'Real Estate', amount:50000, rate:9.8, term:60, credit:720, dti:28, risk:'Low', status:'pending', purpose:'Down payment support', income:120000 },
+  { id:6, name:'Kevin O.', type:'Business', amount:15000, rate:11.5, term:36, credit:640, dti:38, risk:'Medium', status:'approved', purpose:'Equipment', income:65000 },
+];
+
+// ── NAV ──
+const PAGE_KEYS = ['borrower','lender','lender-signup','my-bank'];
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelectorAll('.ntab').forEach((b, i) => b.classList.toggle('active', PAGE_KEYS[i] === p));
+}
+
+// ── LENDER SIGNUP FLOW ──
+let selectedRisk = 'balanced';
+let lenderBankConnected = false;
+
+function lsGoStep(n) {
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('ls-step-' + i);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+    const sp = document.getElementById('sp' + i);
+    if (sp) {
+      sp.classList.toggle('active', i === n);
+      sp.classList.toggle('done', i < n);
+    }
+  });
+}
+
+function lsNextStep(current) {
+  if (current === 1) {
+    const fname = document.getElementById('ls-fname').value.trim();
+    const lname = document.getElementById('ls-lname').value.trim();
+    const email = document.getElementById('ls-email').value.trim();
+    const acc2 = document.getElementById('ls-acc2').checked;
+    const acc3 = document.getElementById('ls-acc3').checked;
+    if (!fname || !lname) { showToast('Please enter your full name.', 'error'); return; }
+    if (!email || !email.includes('@')) { showToast('Please enter a valid email address.', 'error'); return; }
+    if (!acc2 || !acc3) { showToast('Please accept the risk disclosure and lender agreement.', 'error'); return; }
+  }
+  if (current === 2) {
+    const anyType = ['personal','business','student','realestate'].some(t => document.getElementById('lt-'+t).checked);
+    if (!anyType) { showToast('Please select at least one loan type.', 'error'); return; }
+  }
+  lsGoStep(current + 1);
+  document.getElementById('page-lender-signup').scrollTo(0, 0);
+  window.scrollTo(0, 0);
+}
+
+function selectRisk(level) {
+  selectedRisk = level;
+  ['conservative','balanced','growth'].forEach(r => {
+    document.getElementById('risk-' + r).classList.toggle('selected', r === level);
+  });
+}
+
+function selectLenderBank(el, bank) {
+  document.querySelectorAll('#ls-bank-list .bank-option').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('ls-bank-oauth').style.display = 'block';
+  document.getElementById('ls-oauth-btn').disabled = false;
+  document.getElementById('ls-oauth-btn').textContent = 'Connect via bank login →';
+  document.getElementById('ls-oauth-return').style.display = 'none';
+  lenderBankConnected = false;
+}
+
+function simulateLenderBankConnect() {
+  const btn = document.getElementById('ls-oauth-btn');
+  btn.disabled = true;
+  btn.textContent = 'Redirecting…';
+  setTimeout(() => {
+    btn.style.display = 'none';
+    document.getElementById('ls-oauth-return').style.display = 'block';
+    document.getElementById('ls-deposit-section').style.display = 'block';
+    lenderBankConnected = true;
+  }, 1200);
+}
+
+function lsFinish() {
+  if (!lenderBankConnected) { showToast('Please connect a funding bank account first.', 'error'); return; }
+  const deposit = parseFloat(document.getElementById('ls-deposit').value);
+  if (!deposit || deposit < 100) { showFieldError('ls-deposit', 'Minimum deposit is $100.'); return; }
+  clearFieldErrors();
+  const fname = document.getElementById('ls-fname').value.trim() || 'Lender';
+  document.getElementById('ls-success-name').textContent = fname;
+  lsGoStep(4);
+  window.scrollTo(0, 0);
+}
+
+// ── MY BANK PAGE ──
+let addBankPending = { name: '', abbr: '', color: '' };
+
+function openAddBankModal() {
+  document.querySelectorAll('#add-bank-list .bank-option').forEach(x => x.classList.remove('selected'));
+  document.getElementById('add-bank-oauth-panel').style.display = 'none';
+  document.getElementById('add-bank-return').style.display = 'none';
+  const btn = document.getElementById('add-bank-connect-btn');
+  btn.style.display = 'inline-flex';
+  btn.disabled = false;
+  btn.textContent = 'Continue to bank login →';
+  document.getElementById('add-bank-modal').classList.add('open');
+}
+
+function closeAddBankModal() {
+  document.getElementById('add-bank-modal').classList.remove('open');
+}
+
+function selectAddBank(el, name, abbr, color) {
+  document.querySelectorAll('#add-bank-list .bank-option').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  addBankPending = { name, abbr, color };
+  document.getElementById('add-bank-name-label').textContent = name;
+  document.getElementById('add-bank-oauth-panel').style.display = 'block';
+  document.getElementById('add-bank-return').style.display = 'none';
+  const btn = document.getElementById('add-bank-connect-btn');
+  btn.style.display = 'inline-flex';
+  btn.disabled = false;
+  btn.textContent = 'Continue to bank login →';
+}
+
+function confirmAddBank() {
+  const btn = document.getElementById('add-bank-connect-btn');
+  btn.disabled = true;
+  btn.textContent = 'Redirecting to bank…';
+  setTimeout(() => {
+    btn.style.display = 'none';
+    document.getElementById('add-bank-return').style.display = 'block';
+    setTimeout(() => {
+      closeAddBankModal();
+      appendConnectedBank(addBankPending.name, addBankPending.abbr, addBankPending.color);
+      showToast(`✓ ${addBankPending.name} account connected successfully.`, 'success');
+    }, 900);
+  }, 1000);
+}
+
+function appendConnectedBank(name, abbr, color) {
+  const lastFour = Math.floor(1000 + Math.random() * 9000);
+  const list = document.getElementById('connected-banks-list');
+  const div = document.createElement('div');
+  div.className = 'pbank-connected';
+  div.style.marginBottom = '0.5rem';
+  div.innerHTML = `
+    <div class="pbank-connected-info">
+      <div class="pbank-icon" style="background:${color};">${abbr}</div>
+      <div>
+        <div class="pbank-name">${name} Checking ···${lastFour}</div>
+        <div class="pbank-meta">Connected ${new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'})} · Read-only · Available for borrowing</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="badge approved">Active</span>
+      <button class="btn btn-sm btn-outline" onclick="this.closest('.pbank-connected').remove();showToast('Account removed.','success');" style="color:var(--red);border-color:rgba(226,75,74,0.3);">Remove</button>
+    </div>`;
+  list.appendChild(div);
+}
+
+function removeDemoBank() {
+  document.getElementById('demo-bank-entry').remove();
+  showToast('Chase account removed.', 'success');
+}
+
+// ── LOAN CALCULATOR (My Bank page) ──
+function updateLoanCalc() {
+  const amount = parseInt(document.getElementById('pb-amount').value);
+  const term = parseInt(document.getElementById('pb-term').value);
+  const rate = 7.9; // rate based on verified profile
+  const monthly = calcMonthly(amount, rate, term);
+  const totalPay = monthly * term;
+  const interest = totalPay - amount;
+  document.getElementById('pb-amount-val').textContent = '$' + amount.toLocaleString();
+  document.getElementById('pb-term-val').textContent = term + ' months';
+  document.getElementById('pb-monthly').textContent = '$' + Math.round(monthly).toLocaleString();
+  document.getElementById('pb-interest').textContent = '$' + Math.round(interest).toLocaleString();
+  document.getElementById('pb-total').textContent = '$' + Math.round(totalPay).toLocaleString();
+}
+
+function applyFromBank() {
+  showPage('borrower');
+  // Pre-fill borrower flow if already verified
+  if (verifiedProfile) {
+    document.getElementById('step-connect').style.display = 'none';
+    showOffers();
+  }
+  showToast('Your verified profile has been loaded. Select an offer below.', 'success');
+}
+
+
+
+// ── LENDER TABS ──
+function lenderTab(t) {
+  ['opportunities','portfolio','analytics'].forEach(x => {
+    document.getElementById('ltab-' + x).style.display = x === t ? 'block' : 'none';
+  });
+  document.querySelectorAll('.itab').forEach((b,i) => b.classList.toggle('active', ['opportunities','portfolio','analytics'][i] === t));
+}
+
+// ── BUILD LENDER TABLE ──
+function buildLenderTable() {
+  const tbody = document.getElementById('lender-loan-table');
+  tbody.innerHTML = LOANS.map(l => `
+    <tr>
+      <td><strong>${l.name}</strong></td>
+      <td>${l.type}</td>
+      <td><strong>$${l.amount.toLocaleString()}</strong></td>
+      <td style="color:var(--green-dark);font-weight:600;">${l.rate}%</td>
+      <td>${l.term} mo</td>
+      <td>
+        <div style="font-size:13px;">${l.credit}</div>
+        <div class="risk-meter" style="width:70px;margin-top:3px;"><div class="risk-fill" style="width:${Math.round((l.credit-300)/5.5)}%;background:${l.credit>=720?'var(--green)':l.credit>=650?'var(--amber)':'var(--red)'};"></div></div>
+      </td>
+      <td>${l.dti}%</td>
+      <td><span style="font-size:12px;padding:3px 9px;border-radius:99px;background:${l.risk==='Low'?'var(--green-light)':'var(--amber-light)'};color:${l.risk==='Low'?'var(--green-dark)':'var(--amber-dark)'};">${l.risk}</span></td>
+      <td><span class="badge ${l.status}">${l.status.charAt(0).toUpperCase()+l.status.slice(1)}</span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-outline" onclick="openLenderDetail(${l.id})">Details</button>
+        ${l.status !== 'funded' ? `<button class="btn btn-sm btn-primary" onclick="fundLoan(${l.id})">Fund</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openLenderDetail(id) {
+  const l = LOANS.find(x => x.id === id);
+  const monthly = calcMonthly(l.amount, l.rate, l.term);
+  const total = monthly * l.term;
+  const interest = total - l.amount;
+  document.getElementById('ld-title').textContent = `${l.name} — ${l.type} Loan`;
+  document.getElementById('ld-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem;">
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Amount</div>
+        <div style="font-size:22px;font-family:'DM Serif Display',serif;">$${l.amount.toLocaleString()}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Rate</div>
+        <div style="font-size:22px;font-family:'DM Serif Display',serif;color:var(--green-dark);">${l.rate}%</div>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">You earn</div>
+        <div style="font-size:22px;font-family:'DM Serif Display',serif;color:var(--green-dark);">$${Math.round(interest).toLocaleString()}</div>
+      </div>
+    </div>
+    <div class="detail-panel">
+      <div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Verified borrower profile</div>
+      <div class="score-row"><span>Purpose</span><strong>${l.purpose}</strong></div>
+      <div class="score-row"><span>Annual income</span><strong>$${l.income.toLocaleString()}</strong></div>
+      <div class="score-row"><span>Credit score</span><strong>${l.credit} <span style="color:${l.credit>=720?'var(--green)':l.credit>=650?'var(--amber)':'var(--red)'};">(${l.credit>=720?'Excellent':l.credit>=650?'Good':'Fair'})</span></strong></div>
+      <div class="score-row"><span>Debt-to-income</span><strong>${l.dti}% <span style="color:${l.dti<36?'var(--green)':'var(--amber)'};">(${l.dti<20?'Very low':l.dti<36?'Healthy':'Moderate'})</span></strong></div>
+      <div class="score-row"><span>Risk tier</span><strong>${l.risk}</strong></div>
+      <div class="score-row"><span>AI verification</span><strong style="color:var(--green);">✓ Bank-verified</strong></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:1rem;" onclick="fundLoan(${l.id});document.getElementById('lender-detail-modal').classList.remove('open')">Fund this loan — $${l.amount.toLocaleString()}</button>
+  `;
+  document.getElementById('lender-detail-modal').classList.add('open');
+}
+
+function fundLoan(id) {
+  const l = LOANS.find(x => x.id === id);
+  l.status = 'funded';
+  buildLenderTable();
+  showToast(`✓ Funded ${l.name}'s loan — $${l.amount.toLocaleString()} at ${l.rate}% APR. Disbursement within 24 hours.`, 'success');
+}
+
+// ── UI HELPERS ──
+function showFieldError(fieldId, message) {
+  clearFieldErrors();
+  const field = document.getElementById(fieldId);
+  if (!field) return;
+  field.style.borderColor = 'var(--red)';
+  const err = document.createElement('div');
+  err.className = 'field-error';
+  err.style.cssText = 'font-size:12px;color:var(--red);margin-top:4px;';
+  err.textContent = message;
+  field.parentNode.appendChild(err);
+  field.focus();
+}
+
+function clearFieldErrors() {
+  document.querySelectorAll('.field-error').forEach(e => e.remove());
+  document.querySelectorAll('.field input, .field select').forEach(f => f.style.borderColor = '');
+}
+
+function showToast(message, type = 'success') {
+  const existing = document.getElementById('bl-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.id = 'bl-toast';
+  const bg = type === 'success' ? 'var(--green)' : type === 'error' ? 'var(--red)' : 'var(--amber)';
+  toast.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${bg};color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.15);max-width:380px;line-height:1.4;transition:opacity 0.4s;`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 4000);
+}
+
+// ── BANK MODAL ──
+function openBankModal() { document.getElementById('bank-modal').classList.add('open'); }
+function closeBankModal() { document.getElementById('bank-modal').classList.remove('open'); }
+
+function selectBank(el, bank) {
+  document.querySelectorAll('.bank-option').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  // Show the OAuth redirect panel — NOT a credential form
+  document.getElementById('bank-creds').style.display = 'block';
+  document.getElementById('oauth-btn').dataset.bank = bank;
+}
+
+function simulateOAuthRedirect() {
+  // In production: window.location.href = `https://oauth.yourbank.com/authorize?client_id=...`
+  // The bank authenticates the user on their own domain, then redirects back with a token.
+  // Here we simulate the round-trip with a brief delay.
+  const btn = document.getElementById('oauth-btn');
+  const redirectState = document.getElementById('oauth-redirect-state');
+  btn.disabled = true;
+  btn.textContent = 'Redirecting to bank…';
+
+  setTimeout(() => {
+    btn.style.display = 'none';
+    redirectState.style.display = 'block';
+    setTimeout(() => {
+      closeBankModal();
+      startVerification();
+    }, 1200);
+  }, 900);
+}
+
+// ── VERIFICATION FLOW ──
+function startVerification() {
+  closeBankModal();
+  document.getElementById('step-connect').style.display = 'none';
+  document.getElementById('step-verify').style.display = 'block';
+
+  // Simulate verified data
+  verifiedProfile = {
+    name: 'Arnav Chohan', income: 72000, credit: 710, dti: 28,
+    monthlyDebt: 1680, balance: 8400, employment: 'Full-time', history: 'Good'
+  };
+
+  const steps = [
+    { id:1, duration:1200, result:'Identity confirmed — Arnav Chohan, DOB verified' },
+    { id:2, duration:1600, result:'Avg monthly income: $6,000 · 14 mo history detected' },
+    { id:3, duration:1400, result:'Monthly debt obligations: $1,680 · DTI: 28%' },
+    { id:4, duration:1200, result:'Payment patterns: Consistent · Credit signals: Strong' },
+    { id:5, duration:1800, result:'Risk score: 71/100 · 3 lender matches found' },
+  ];
+
+  let delay = 0;
+  let totalDuration = steps.reduce((s,x) => s + x.duration, 0);
+  let elapsed = 0;
+
+  steps.forEach((step, i) => {
+    setTimeout(() => {
+      document.getElementById('vd' + step.id).className = 'vstep-dot running';
+      document.getElementById('vd' + step.id).textContent = '↻';
+    }, delay);
+
+    delay += step.duration;
+    elapsed += step.duration;
+    const pct = Math.round((elapsed / totalDuration) * 100);
+
+    setTimeout(() => {
+      const dot = document.getElementById('vd' + step.id);
+      dot.className = 'vstep-dot done';
+      dot.textContent = '✓';
+      const res = document.getElementById('vr' + step.id);
+      res.style.display = 'block';
+      res.textContent = step.result;
+      document.getElementById('verify-progress').style.width = pct + '%';
+
+      if (i === steps.length - 1) {
+        setTimeout(showOffers, 600);
+      }
+    }, delay);
+  });
+}
+
+// ── SHOW OFFERS ──
+function showOffers() {
+  document.getElementById('step-verify').style.display = 'none';
+  document.getElementById('step-offers').style.display = 'block';
+
+  const p = verifiedProfile;
+  document.getElementById('prof-name').textContent = p.name;
+  document.getElementById('prof-income').textContent = `$${p.income.toLocaleString()}/yr`;
+  document.getElementById('prof-score').textContent = `Credit ${p.credit}`;
+  document.getElementById('prof-dti').textContent = `DTI ${p.dti}%`;
+
+  const offers = [
+    { label:'Standard', rate:9.5, term:36, max:15000, desc:'Our standard personal rate based on your verified profile.', best:false },
+    { label:'Best Rate', rate:7.9, term:36, max:20000, desc:'Lowest rate — ideal for borrowers with your credit profile.', best:true },
+    { label:'Extended', rate:8.5, term:60, max:25000, desc:'Larger loan amount over 5 years with manageable payments.', best:false },
+  ];
+
+  document.getElementById('offer-grid').innerHTML = offers.map(o => {
+    const monthly = calcMonthly(10000, o.rate, o.term);
+    return `
+    <div class="offer-card ${o.best ? 'best' : ''}" onclick="selectOffer(this,'${o.label}',${o.rate},${o.term},${o.max})">
+      ${o.best ? '<div class="offer-badge">Best for you</div>' : ''}
+      <div class="offer-type">${o.label}</div>
+      <div class="offer-rate">${o.rate}<span>% APR</span></div>
+      <div class="offer-details">
+        <strong>Up to $${o.max.toLocaleString()}</strong><br>
+        Term: ${o.term} months<br>
+        ~$${Math.round(monthly)}/mo per $10K<br>
+        ${o.desc}
+      </div>
+      <button class="btn btn-outline offer-select" onclick="event.stopPropagation();selectOffer(this.closest('.offer-card'),'${o.label}',${o.rate},${o.term},${o.max})">Select this offer</button>
+    </div>`;
+  }).join('');
+}
+
+function selectOffer(card, label, rate, term, max) {
+  document.querySelectorAll('.offer-card').forEach(c => c.style.outline = '');
+  card.style.outline = '2.5px solid var(--green)';
+  selectedOffer = { label, rate, term, max };
+  document.getElementById('req-rate').value = rate + '% APR';
+  document.getElementById('req-term').value = term;
+  document.getElementById('req-amount').placeholder = `Up to $${max.toLocaleString()}`;
+  document.getElementById('request-form').style.display = 'block';
+  document.getElementById('request-form').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── INPUT SANITIZATION ──
+// Strip characters that could be used to inject instructions into the AI prompt.
+// The prompt is server-side too, but defense-in-depth means sanitizing on the client as well.
+function sanitizeText(str) {
+  return String(str)
+    .replace(/[<>"'`\\]/g, '')   // remove HTML/JS-injectable chars
+    .replace(/\n|\r/g, ' ')      // flatten newlines (prompt injection vector)
+    .trim()
+    .slice(0, 120);              // hard cap — no field should need more than this
+}
+
+// ── GET LOAN + AI RESPONSE ──
+async function getLoan() {
+  const rawAmount = document.getElementById('req-amount').value;
+  const rawPurpose = document.getElementById('req-purpose').value;
+  const rawTerm = document.getElementById('req-term').value;
+
+  // --- Validation ---
+  const amount = parseFloat(rawAmount);
+  const term = parseInt(rawTerm);
+
+  if (!rawAmount || isNaN(amount) || amount < 500) {
+    showFieldError('req-amount', 'Please enter a loan amount of at least $500.');
+    return;
+  }
+  if (amount > 1_000_000) {
+    showFieldError('req-amount', 'Loan amount cannot exceed $1,000,000.');
+    return;
+  }
+  if (selectedOffer && amount > selectedOffer.max) {
+    showFieldError('req-amount', `This offer allows up to $${selectedOffer.max.toLocaleString()}.`);
+    return;
+  }
+  if (isNaN(term) || term < 6 || term > 360) {
+    showToast('Invalid repayment term selected.', 'error');
+    return;
+  }
+
+  clearFieldErrors();
+
+  // --- Sanitize inputs before they touch the AI prompt ---
+  const purpose = sanitizeText(rawPurpose);
+  const rate = selectedOffer ? selectedOffer.rate : 8.5;
+
+  document.getElementById('get-loan-btn').disabled = true;
+  document.getElementById('get-loan-btn').textContent = 'Analyzing your loan...';
+
+  const monthly = calcMonthly(amount, rate, term);
+  const totalPay = monthly * term;
+  const totalInterest = totalPay - amount;
+  const p = verifiedProfile;
+
+  // Show UI immediately
+  document.getElementById('ai-loan-response').style.display = 'block';
+  document.getElementById('ai-loan-response').scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  // Build repayment stats
+  document.getElementById('repay-stats').innerHTML = `
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Monthly payment</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:26px;">$${Math.round(monthly).toLocaleString()}</div>
+    </div>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total interest paid</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:26px;color:${rate > 9 ? 'var(--amber-dark)' : 'var(--green-dark)'};">$${Math.round(totalInterest).toLocaleString()}</div>
+    </div>
+    <div style="background:var(--bg);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total you repay</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:26px;">$${Math.round(totalPay).toLocaleString()}</div>
+    </div>
+  `;
+
+  // Schedule preview (first 4 + last payment)
+  let bal = amount;
+  let scheduleRows = '';
+  for (let mo = 1; mo <= Math.min(4, term); mo++) {
+    const intPart = bal * (rate/100/12);
+    const prinPart = monthly - intPart;
+    bal -= prinPart;
+    scheduleRows += `<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Month ${mo}</span><span>$${Math.round(monthly)}</span><span style="color:var(--green-dark);">–$${Math.round(intPart)} interest</span><span>$${Math.max(0,Math.round(bal)).toLocaleString()} remaining</span></div>`;
+  }
+  if (term > 5) scheduleRows += `<div style="font-size:12px;color:var(--muted);padding:6px 0;">· · · ${term - 4} more payments · · ·</div>`;
+  scheduleRows += `<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--green-dark);font-weight:500;"><span>Month ${term} (final)</span><span>$${Math.round(monthly)}</span><span>Loan paid off</span><span>$0</span></div>`;
+  document.getElementById('repay-schedule-preview').innerHTML = `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Payment schedule preview</div>` + scheduleRows;
+
+  // Call Anthropic API
+  const prompt = `You are BridgeLend's AI loan agent. A borrower has just been approved for a loan. Give a warm, clear, personalized response explaining their loan in plain English.
+
+Borrower profile:
+- Name: ${p.name}
+- Verified annual income: $${p.income.toLocaleString()}
+- Credit score: ${p.credit}
+- Debt-to-income ratio: ${p.dti}%
+- Employment: ${p.employment}
+
+Loan details:
+- Loan amount: $${amount.toLocaleString()}
+- Purpose: ${purpose}
+- Interest rate: ${rate}% APR
+- Term: ${term} months
+- Monthly payment: $${Math.round(monthly).toLocaleString()}
+- Total interest paid: $${Math.round(totalInterest).toLocaleString()}
+- Total amount repaid: $${Math.round(totalPay).toLocaleString()}
+
+Write 3–4 short paragraphs:
+1. Confirm their loan is approved and give them the key numbers in a human way.
+2. Explain what their ${rate}% APR rate actually means — is it good, average, or high for their profile? Why did they get this rate? Be honest.
+3. Break down in plain English what paying $${Math.round(totalInterest).toLocaleString()} in interest means — put it in context (e.g. "for every $1 you borrow, you pay back $X extra").
+4. Give one practical tip to save money on this loan (e.g. making extra payments, refinancing if score improves, etc.).
+
+Keep it friendly, specific, and honest. Do not use bullet points — write in flowing paragraphs. Do not use markdown bold or formatting.`;
+
+  try {
+    // All AI calls go through your backend proxy — the API key never touches the client.
+    // Your backend endpoint should forward { prompt } to Anthropic and return { text }.
+    const res = await fetch(BACKEND_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    if (!res.ok) throw new Error(`Proxy error: ${res.status}`);
+    const data = await res.json();
+    const text = data.text || '';
+    if (!text) throw new Error('Empty response from AI');
+    renderAIText(text);
+  } catch(e) {
+    // Fallback for demo
+    const isHighRate = rate > 9;
+    const perDollar = (totalPay / amount).toFixed(2);
+    renderAIText(`Great news, ${p.name} — your loan of $${amount.toLocaleString()} for ${purpose.toLowerCase()} has been approved and funds will be disbursed within 24 hours. Your monthly payment is $${Math.round(monthly).toLocaleString()} over ${term} months.
+
+Your rate of ${rate}% APR is ${isHighRate ? 'on the higher side for your profile' : 'a solid rate for your credit profile'}. With a credit score of ${p.credit} and a DTI of ${p.dti}%, ${isHighRate ? "there's some room to improve — paying down existing debt would push your score higher and qualify you for better rates on future loans." : "you qualified for one of our more competitive rates. Your consistent payment history and manageable debt load are working in your favor."} 
+
+In real terms, the $${Math.round(totalInterest).toLocaleString()} in interest means that for every dollar you borrow, you'll pay back $${perDollar} in total. On a $${amount.toLocaleString()} loan, that's $${Math.round(totalPay).toLocaleString()} returned over ${term} months — a ${((totalInterest/amount)*100).toFixed(1)}% premium on what you're borrowing. That's the cost of access to capital today.
+
+One practical tip: even one extra payment per year — putting an additional $${Math.round(monthly).toLocaleString()} toward principal whenever you can — could shorten your loan by 2–3 months and save you roughly $${Math.round(totalInterest * 0.1).toLocaleString()} in interest. If your credit score climbs above 740, you can also apply to refinance at a lower rate.`);
+  }
+
+  document.getElementById('get-loan-btn').disabled = false;
+  document.getElementById('get-loan-btn').textContent = 'Get my loan & full breakdown';
+}
+
+function renderAIText(text) {
+  const paras = text.split('\n\n').filter(p => p.trim());
+  document.getElementById('ai-text-content').innerHTML = paras.map(p => `<p>${p.trim()}</p>`).join('');
+}
+
+// ── UTILS ──
+function calcMonthly(principal, annualRate, termMonths) {
+  const r = annualRate / 100 / 12;
+  return principal * r * Math.pow(1+r, termMonths) / (Math.pow(1+r, termMonths) - 1);
+}
+
+// ── INIT ──
+buildLenderTable();
+updateLoanCalc();
+</script>
+</body>
+</html>
