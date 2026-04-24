@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient() as any;
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -16,7 +17,7 @@ export async function POST(
   const { data: loan, error: loanError } = await supabase
     .from("loans")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (loanError || !loan) return NextResponse.json({ error: "Loan not found" }, { status: 404 });
@@ -43,7 +44,7 @@ export async function POST(
   const { data: funding, error: fundingError } = await supabase
     .from("loan_fundings")
     .upsert({
-      loan_id: params.id,
+      loan_id: id,
       lender_id: user.id,
       amount,
       share_pct,
@@ -57,7 +58,7 @@ export async function POST(
   await supabase
     .from("loans")
     .update({ funded_amount: newFunded, status: newStatus })
-    .eq("id", params.id);
+    .eq("id", id);
 
   await supabase
     .from("lender_profiles")
@@ -66,11 +67,11 @@ export async function POST(
 
   await supabase.from("transactions").insert({
     user_id: user.id,
-    loan_id: params.id,
+    loan_id: id,
     funding_id: funding.id,
     type: "loan_disbursement",
     amount: -amount,
-    description: `Funded ${share_pct}% of loan ${params.id}`,
+    description: `Funded ${share_pct}% of loan ${id}`,
     status: "completed",
   });
 
